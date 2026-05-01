@@ -5,7 +5,7 @@ import type { ApiResponse, Order, CheckoutFormData } from '@/types'
 // ─── GET /api/orders ──────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient() as any
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         .select('order_id')
         .eq('farmer_id', user.id)
 
-      const ids = [...new Set((farmerOrderIds ?? []).map(r => r.order_id))]
+      const ids = [...new Set((farmerOrderIds ?? []).map((r: any) => r.order_id))]
       if (ids.length === 0) return NextResponse.json({ data: [], error: null })
       query = query.in('id', ids)
     } else {
@@ -78,8 +78,8 @@ export async function GET(request: NextRequest) {
 // 6. Clear cart
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const adminClient = createAdminClient() // bypasses RLS for atomic ops
+    const supabase = await createClient() as any
+    const adminClient = createAdminClient() as any// bypasses RLS for atomic ops
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate total
-    const total = cartItems.reduce((sum, item) => {
+    const total = cartItems.reduce((sum: number, item: any) => {
       const product = item.product as any
       return sum + product.price_per_unit * item.quantity
     }, 0)
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     if (orderError) throw orderError
 
     // Create order items
-    const orderItems = cartItems.map(item => {
+    const orderItems = cartItems.map((item: any) => {
       const product = item.product as any
       return {
         order_id:   order.id,
