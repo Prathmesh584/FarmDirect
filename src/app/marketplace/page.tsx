@@ -37,7 +37,7 @@ export default function MarketplacePage() {
   })
 
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
+  const supabase = createClient() as any
 
   // ── Fetch products ─────────────────────────────────────────
   const fetchProducts = useCallback(async () => {
@@ -72,7 +72,7 @@ export default function MarketplacePage() {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'products' },
-        (payload) => {
+        (payload: any) => {
           setProducts(prev =>
             prev.map(p =>
               p.id === payload.new.id

@@ -15,7 +15,7 @@ import { CATEGORY_LABELS, CATEGORY_EMOJIS, ORDER_STATUS_LABELS } from '@/types'
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = createClient() as any
 
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -40,7 +40,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (!product) return
     const ch = supabase.channel(`product-${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products', filter: `id=eq.${id}` },
-        payload => {
+        (payload: any) => {
           setProduct(prev => prev ? {
             ...prev,
             stock_quantity: payload.new.stock_quantity,

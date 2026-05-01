@@ -16,7 +16,7 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ address: '', city: 'Bhopal', pincode: '', notes: '' })
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = createClient() as any
 
   useEffect(() => {
     loadCart()
@@ -134,7 +134,7 @@ export default function CartPage() {
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-cream-dark flex-shrink-0 flex items-center justify-center text-2xl">
                       {p?.images?.[0]
                         ? <Image src={p.images[0]} alt={p.name} width={64} height={64} className="w-full h-full object-cover" />
-                        : <span>{CATEGORY_EMOJIS[p?.category]}</span>
+                        : <span>{CATEGORY_EMOJIS[p?.category as keyof typeof CATEGORY_EMOJIS]}</span>
                       }
                     </div>
                     <div className="flex-1 min-w-0">

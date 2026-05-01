@@ -10,7 +10,7 @@ import type { UserRole } from '@/types'
 function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const supabase = createClient() as any
 
   const [role, setRole] = useState<UserRole>((searchParams.get('role') as UserRole) ?? 'consumer')
   const [form, setForm] = useState({ fullName: '', email: '', password: '', phone: '', farmName: '' })

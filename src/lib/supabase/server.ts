@@ -13,7 +13,7 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: any[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
@@ -30,9 +30,9 @@ export async function createClient() {
 // Service role client for admin operations (never expose to client)
 export function createAdminClient() {
   const { createClient: createSupabaseClient } = require('@supabase/supabase-js')
-  return createSupabaseClient<Database>(
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
-  )
+  ) as any
 }

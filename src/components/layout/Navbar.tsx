@@ -14,7 +14,7 @@ export function Navbar() {
   const [loading, setLoading] = useState(true)
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = createClient() as any
 
   useEffect(() => {
     let mounted = true

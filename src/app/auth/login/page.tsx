@@ -45,7 +45,7 @@ function LoginForm() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role === 'farmer') {
+        if ((profile as any) === 'farmer') {
           router.push('/dashboard')
         } else {
           router.push(redirectTo === '/' ? '/marketplace' : redirectTo)
