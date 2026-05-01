@@ -4,15 +4,13 @@ import type { ApiResponse, Order } from '@/types'
 
 type Params = { params: Promise<{ id: string }> }
 
-// ─── PATCH /api/orders/[id] ───────────────────────────────────
-// Actions:
-//  { action: 'confirm_delivery' }  → Consumer confirms receipt → releases escrow
-//  { action: 'cancel' }            → Consumer/farmer cancels (only before shipped)
-//  { action: 'update_status', status } → Farmer updates shipping status
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+
+    // Cast to any to bypass Supabase generated-type inference issues
+    // on complex joined queries and update payloads
+    const supabase = (await createClient()) as any
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -27,8 +25,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       supabase.from('orders').select('*, items:order_items(farmer_id)').eq('id', id).single(),
     ])
 
-    const profile = profileResult.data
-    const order = orderResult.data
+    const profileRole: string | null = profileResult.data?.role ?? null
+    const order: any = orderResult.data
 
     if (!order) {
       return NextResponse.json<ApiResponse<null>>(
@@ -37,10 +35,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       )
     }
 
-    // Authorization: consumer owns the order, or farmer has items in it
-    const isConsumer = profile?.role === 'consumer' && order.consumer_id === user.id
-    const isFarmer = profile?.role === 'farmer' &&
-      (order.items as any[])?.some((item: any) => item.farmer_id === user.id)
+    const isConsumer: boolean = profileRole === 'consumer' && order.consumer_id === user.id
+    const isFarmer: boolean =
+      profileRole === 'farmer' &&
+      (order.items ?? []).some((item: any) => item.farmer_id === user.id)
 
     if (!isConsumer && !isFarmer) {
       return NextResponse.json<ApiResponse<null>>(
@@ -50,9 +48,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json()
-    const { action } = body
+    const action: string = body.action
 
-    // ── Confirm delivery (consumer) ──────────────────────────
+    // ── Confirm delivery (consumer only) ────────────────────
     if (action === 'confirm_delivery') {
       if (!isConsumer) {
         return NextResponse.json<ApiResponse<null>>(
@@ -71,8 +69,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       const { data, error } = await supabase
         .from('orders')
         .update({
-          status:            'completed',
-          delivered_at:      new Date().toISOString(),
+          status: 'completed',
+          delivered_at: new Date().toISOString(),
           escrow_released_at: new Date().toISOString(),
         })
         .eq('id', id)
@@ -80,7 +78,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         .single()
 
       if (error) throw error
-      return NextResponse.json<ApiResponse<Order>>({ data: data as unknown as Order, error: null })
+      return NextResponse.json<ApiResponse<Order>>({ data: data as Order, error: null })
     }
 
     // ── Cancel order ─────────────────────────────────────────
@@ -93,38 +91,24 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         )
       }
 
-      // Restore stock for cancelled orders
+      // Restore stock for each item
       const { data: items } = await supabase
         .from('order_items')
         .select('product_id, quantity')
         .eq('order_id', id)
 
-      if (items) {
-        for (const item of items) {
+      for (const item of (items ?? []) as any[]) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', item.product_id)
+          .single()
+
+        if (product) {
           await supabase
             .from('products')
-            .update({ stock_quantity: supabase.rpc('stock_quantity + ' + item.quantity as any) })
+            .update({ stock_quantity: product.stock_quantity + item.quantity })
             .eq('id', item.product_id)
-        }
-        // Simpler: use a raw increment
-        for (const item of items) {
-          await supabase.rpc('decrement_stock', {
-            p_product_id: item.product_id,
-            p_quantity: -item.quantity, // negative = add back
-          }).catch(() => {
-            // If the function fails, do a direct update
-            supabase.from('products')
-              .select('stock_quantity')
-              .eq('id', item.product_id)
-              .single()
-              .then(({ data: p }) => {
-                if (p) {
-                  supabase.from('products')
-                    .update({ stock_quantity: (p as any).stock_quantity + item.quantity })
-                    .eq('id', item.product_id)
-                }
-              })
-          })
         }
       }
 
@@ -136,12 +120,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         .single()
 
       if (error) throw error
-      return NextResponse.json<ApiResponse<Order>>({ data: data as unknown as Order, error: null })
+      return NextResponse.json<ApiResponse<Order>>({ data: data as Order, error: null })
     }
 
     // ── Farmer: update shipping status ───────────────────────
     if (action === 'update_status' && isFarmer) {
-      const { status: newStatus } = body
+      const newStatus: string = body.status
       const farmerAllowedStatuses = ['processing', 'shipped', 'delivered']
 
       if (!farmerAllowedStatuses.includes(newStatus)) {
@@ -159,7 +143,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         .single()
 
       if (error) throw error
-      return NextResponse.json<ApiResponse<Order>>({ data: data as unknown as Order, error: null })
+      return NextResponse.json<ApiResponse<Order>>({ data: data as Order, error: null })
     }
 
     return NextResponse.json<ApiResponse<null>>(
