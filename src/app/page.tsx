@@ -10,7 +10,7 @@ export const revalidate = 600
 
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
     const { data, error } = await supabase
       .from('products')
       .select(`

@@ -11,7 +11,7 @@ import { CATEGORY_EMOJIS, ORDER_STATUS_LABELS } from '@/types'
 export const revalidate = 0 // always fresh for dashboard
 
 export default async function FarmerDashboard() {
-  const supabase = await createClient()
+  const supabase = (await createClient()) as any
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
@@ -45,9 +45,9 @@ export default async function FarmerDashboard() {
 
   // Compute stats
   const totalProducts = products?.length ?? 0
-  const activeProducts = products?.filter(p => p.is_available && p.stock_quantity > 0).length ?? 0
-  const totalRevenue = (recentOrderItems ?? []).reduce((sum, item) => sum + (item.subtotal ?? 0), 0)
-  const totalOrders = new Set((recentOrderItems ?? []).map(i => i.order_id)).size
+  const activeProducts = products?.filter((p: any) => p.is_available && p.stock_quantity > 0).length ?? 0
+  const totalRevenue = (recentOrderItems ?? []).reduce((sum: number, item: any) => sum + (item.subtotal ?? 0), 0)
+  const totalOrders = new Set((recentOrderItems ?? []).map((i: any) => i.order_id)).size
 
   const allReviews = (products ?? []).flatMap((p: any) => p.reviews ?? [])
   const avgRating = allReviews.length

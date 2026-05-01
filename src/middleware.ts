@@ -21,14 +21,12 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
+        setAll(cookiesToSet: any[]) {
+          cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
+          request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options: any }) =>
+          supabaseResponse.cookies.set(name, value, options))
         },
       },
     }
@@ -56,7 +54,7 @@ export async function middleware(request: NextRequest) {
 
   // Role-based guard (only if authenticated)
   if (user && !userError) {
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('role')
       .eq('id', user.id)
@@ -64,7 +62,7 @@ export async function middleware(request: NextRequest) {
 
     if (profile) {
       // Non-farmers trying to access farmer routes
-      if (profile.role !== 'farmer' && FARMER_ROUTES.some(r => pathname.startsWith(r))) {
+      if ((profile as any) !== 'farmer' && FARMER_ROUTES.some(r => pathname.startsWith(r))) {
         const url = request.nextUrl.clone()
         url.pathname = '/marketplace'
         return NextResponse.redirect(url)

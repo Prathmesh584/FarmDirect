@@ -5,7 +5,7 @@ import type { ApiResponse, Order, CheckoutFormData } from '@/types'
 // ─── GET /api/orders ──────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient() as any
+    const supabase = (await createClient()) as any
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
