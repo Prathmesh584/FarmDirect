@@ -5,7 +5,7 @@ import type { ProductFilters, ApiResponse, Product } from '@/types'
 // ─── GET /api/products ────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
     const { searchParams } = new URL(request.url)
 
     const filters: ProductFilters = {
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 // ─── POST /api/products ───────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
 
     // Auth check
     const { data: { user }, error: authError } = await supabase.auth.getUser()

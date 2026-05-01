@@ -8,7 +8,7 @@ type Params = { params: Promise<{ id: string }> }
 export async function GET(_request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
 
     const { data, error } = await supabase
       .from('products')
@@ -51,7 +51,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
@@ -131,7 +131,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(_request: NextRequest, { params }: Params) {
   try {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
