@@ -54,26 +54,24 @@ export async function middleware(request: NextRequest) {
 
   // Role-based guard (only if authenticated)
   if (user && !userError) {
-    const { data: profile } = await (supabase as any)
+    const { data: profileData } = await (supabase as any)
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (profile) {
-      // Non-farmers trying to access farmer routes
-      if ((profile as any) !== 'farmer' && FARMER_ROUTES.some(r => pathname.startsWith(r))) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/marketplace'
-        return NextResponse.redirect(url)
-      }
+    const userRole: string = profileData?.role ?? 'consumer'
 
-      // Non-consumers trying to access consumer routes (farmers redirected to dashboard)
-      if (profile.role !== 'consumer' && CONSUMER_ROUTES.some(r => pathname.startsWith(r))) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-      }
+    if (userRole !== 'farmer' && FARMER_ROUTES.some(r => pathname.startsWith(r))) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/marketplace'
+      return NextResponse.redirect(url)
+    }
+
+    if (userRole !== 'consumer' && CONSUMER_ROUTES.some(r => pathname.startsWith(r))) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
     }
   }
 
