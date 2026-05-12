@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         )
       }
 
-      if (!['delivered', 'shipped'].includes(order.status)) {
+      if (!['paid', 'processing', 'shipped', 'delivered'].includes(order.status)) {
         return NextResponse.json<ApiResponse<null>>(
           { data: null, error: `Cannot confirm delivery for order in status: ${order.status}` },
           { status: 400 }

@@ -196,15 +196,27 @@ export async function POST(request: NextRequest) {
       throw itemsError
     }
 
-    // Atomically decrement stock for each product using DB function
-    // This prevents race conditions when multiple users buy simultaneously
+    // Decrement stock — use RPC if service role key is available, else direct update
     const stockUpdateErrors: string[] = []
     for (const item of cartItems) {
       const product = item.product as any
-      const { error: stockError } = await adminClient.rpc('decrement_stock', {
-        p_product_id: product.id,
-        p_quantity:   item.quantity,
-      })
+      let stockError = null
+
+      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        const { error } = await adminClient.rpc('decrement_stock', {
+          p_product_id: product.id,
+          p_quantity:   item.quantity,
+        })
+        stockError = error
+      } else {
+        const { error } = await supabase
+          .from('products')
+          .update({ stock_quantity: product.stock_quantity - item.quantity })
+          .eq('id', product.id)
+          .gte('stock_quantity', item.quantity)
+        stockError = error
+      }
+
       if (stockError) {
         stockUpdateErrors.push(product.name)
       }
