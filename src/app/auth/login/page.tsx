@@ -44,13 +44,18 @@ function LoginForm() {
       // Determine role → redirect accordingly
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if ((profile as any) === 'farmer') {
-          router.push('/dashboard')
+        const { data: profile } = await supabase.from('profiles').select('role, onboarding_complete').eq('id', user.id).single()
+        router.refresh()
+        await new Promise(resolve => setTimeout(resolve, 100))
+        if (profile?.role === 'farmer') {
+          if (!profile?.onboarding_complete) {
+            router.push('/onboarding')
+          } else {
+            router.push('/dashboard')
+          }
         } else {
           router.push(redirectTo === '/' ? '/marketplace' : redirectTo)
         }
-        router.refresh()
       }
     } catch {
       setError('Something went wrong. Please try again.')
